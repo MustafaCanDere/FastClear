@@ -2,14 +2,17 @@
 
 Windows için ücretsiz, açık kaynak temizlik ve optimizasyon aracı.
 
-Windows 10 / 11 için menülü bir temizlik ve optimizasyon programı. Ek kurulum gerekmez (Windows'ta hazır gelen PowerShell ile çalışır).
+Windows 10 / 11 için menülü bir temizlik ve optimizasyon programı. Kurulum gerekmez.
 
-## Nasıl çalıştırılır
-1. `FastClear.bat` ve `FastClear.ps1` dosyalarını aynı klasöre koyun.
-2. `FastClear.bat` dosyasına çift tıklayın.
-3. Windows Update önbelleği, Windows Temp ve sürücü optimizasyonu için menüden **7 (Yönetici olarak yeniden başlat)** seçin.
+[![Derleme](https://github.com/MustafaCanDere/FastClear/actions/workflows/build.yml/badge.svg)](https://github.com/MustafaCanDere/FastClear/actions/workflows/build.yml)
 
-> Windows "Bilinmeyen yayıncı" uyarısı verirse: dosyaya sağ tık > Özellikler > alttaki **Engellemeyi kaldır** kutusunu işaretleyin.
+## İndir ve çalıştır
+1. **[Son sürümü indir (Releases)](https://github.com/MustafaCanDere/FastClear/releases/latest)** ve `FastClear.exe` dosyasını kaydet.
+2. `FastClear.exe` dosyasına çift tıkla. Windows yönetici izni ister; **Evet** de (Windows Temp, Update önbelleği ve sürücü optimizasyonu için gerekli).
+
+> Program imzasız olduğu için Windows SmartScreen "Bilinmeyen yayımcı" uyarısı gösterebilir. **Ek bilgi > Yine de çalıştır** ile açabilirsin. Kaynak kodun tamamı bu depodadır (`FastClear.ps1`).
+
+Kayıtlar `%LOCALAPPDATA%\FastClear\logs` klasörüne yazılır.
 
 ## Menü
 | No | İşlem | Siler mi? |
@@ -34,5 +37,5 @@ Windows 10 / 11 için menülü bir temizlik ve optimizasyon programı. Ek kurulu
 ## Güvenlik
 - Kişisel dosyalara, belgelere, kayıt defterine dokunmaz.
 - Kullanımdaki dosyalar atlanır, hata vermez.
-- Her silme işlemi `logs` klasörüne kaydedilir.
+- Her silme işlemi `%LOCALAPPDATA%\FastClear\logs` klasörüne kaydedilir.
 - Tarayıcı önbelleği temizlenirken tarayıcıları kapatmanız önerilir.
