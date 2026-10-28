@@ -1,0 +1,78 @@
+name: Derleme
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PSScriptAnalyzer
+        shell: powershell
+        run: |
+          Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
+          $r = Invoke-ScriptAnalyzer -Path .\FastClear.ps1 -Severity Error
+          $r | Format-Table -AutoSize | Out-String | Write-Host
+          if ($r) { exit 1 }
+
+      - name: Tarama testi (betik)
+        shell: powershell
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File .\FastClear.ps1 -ScanOnly
+          if ($LASTEXITCODE -ne 0) { throw "Cikis kodu $LASTEXITCODE" }
+
+      - name: .exe derle
+        shell: powershell
+        run: |
+          Install-Module ps2exe -Force -Scope CurrentUser
+          $ver = (Select-String -Path .\FastClear.ps1 -Pattern "^\`$AppVersion = '(.+)'").Matches[0].Groups[1].Value
+          "VERSION=$ver" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Invoke-ps2exe -inputFile .\FastClear.ps1 -outputFile .\dist\FastClear.exe -requireAdmin `
+            -title 'Fast Clear' -product 'Fast Clear' -description 'Windows temizleme ve optimizasyon araci' `
+            -company 'MustafaCanDere' -version "$ver.0"
+          if (-not (Test-Path .\dist\FastClear.exe)) { throw 'exe olusturulamadi' }
+
+      - name: Tarama testi (exe)
+        shell: powershell
+        run: |
+          $out = & .\dist\FastClear.exe -ScanOnly | Out-String
+          Write-Host $out
+          if ($out -notmatch 'TOPLAM') { throw 'exe tarama raporu uretmedi' }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FastClear
+          path: dist/FastClear.exe
+
+      # main'e yeni bir $AppVersion ile gonderim yapilinca o surum otomatik yayinlanir
+      - name: Surum zaten yayinda mi?
+        id: check
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v$VERSION" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Surum yayinla
+        if: steps.check.outputs.publish == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: Fast Clear ${{ env.VERSION }}
+          target_commitish: ${{ github.sha }}
+          files: dist/FastClear.exe
+          generate_release_notes: true

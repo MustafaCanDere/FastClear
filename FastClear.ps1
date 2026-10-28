@@ -2,12 +2,17 @@
     Fast Clear - Windows temizleme ve optimizasyon araci
     Hicbir sey onay almadan silinmez. Once tarama (onizleme) yapilir.
 #>
+param([switch]$ScanOnly)
 
+$AppVersion = '1.0.0'
 $ErrorActionPreference = 'SilentlyContinue'
 $Host.UI.RawUI.WindowTitle = 'Fast Clear'
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 
-$LogDir  = Join-Path $PSScriptRoot 'logs'
+# .exe olarak derlendiginde $PSCommandPath bos olur; calisan dosyanin yolunu surecten aliriz.
+$AppPath = if ($PSCommandPath) { $PSCommandPath } else { [Diagnostics.Process]::GetCurrentProcess().MainModule.FileName }
+$IsExe   = $AppPath -like '*.exe'
+$LogDir  = Join-Path $env:LOCALAPPDATA 'FastClear\logs'
 New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
 $LogFile = Join-Path $LogDir ("FastClear_{0}.log" -f (Get-Date -Format 'yyyyMMdd_HHmmss'))
 
@@ -339,15 +344,23 @@ function Show-Optimize {
 
 function Restart-AsAdmin {
     if (Test-Admin) { Write-Host 'Zaten yonetici olarak calisiyor.' -ForegroundColor Green; Pause-Menu; return }
-    Start-Process powershell.exe -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+    if ($IsExe) { Start-Process -FilePath $AppPath -Verb RunAs }
+    else { Start-Process powershell.exe -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$AppPath`"" }
     exit
 }
 
 # --- Ana menu ----------------------------------------------------------------
 
-Write-Log 'Fast Clear baslatildi'
+Write-Log "Fast Clear $AppVersion baslatildi"
+
+# Etkilesimsiz tarama: sadece raporu yazar ve cikar (hicbir sey silmez).
+if ($ScanOnly) {
+    Show-Scan (Invoke-Scan)
+    exit 0
+}
+
 while ($true) {
-    Write-Header 'Ana menu'
+    Write-Header "Ana menu  (v$AppVersion)"
     if (Test-Admin) { Write-Host 'Mod: YONETICI' -ForegroundColor Green }
     else { Write-Host 'Mod: standart kullanici (bazi islemler icin 7 ile yonetici olun)' -ForegroundColor DarkYellow }
     Write-Host ''
